@@ -1,4 +1,4 @@
-# F5 Secure Enclave for Azure Public DMZ 
+# F5 Secure Cloud Architecture for Azure Public Cloud 
 
 ## Contents
 
