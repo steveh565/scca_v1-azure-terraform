@@ -19,9 +19,16 @@ Terraform v0.12.6
 
 ## Introduction
 
-This solution uses an Terraform template to launch a Four NICs deployment of a cloud-focused BIG-IP VE cluster (Active/Standby) in Microsoft Azure. Traffic flows from an ALB to the BIG-IP VE which then processes the traffic to application servers. This is the standard cloud design where the BIG-IP VE instance is running with Two interfaces: Management and External.  
+This solution uses an Terraform template to launch a Four NICs deployment of a cloud-focused BIG-IP VE cluster (Active/Standby) in Microsoft Azure. Traffic flows from an ALB to the active member of a BIG-IP VE cluster, which then processes the traffic through a security inspection zone dynamically utilizing any number of F5 or third party security tools, before delivering traffic to application workload for final processing. 
 
-The BIG-IP VEs have the [Local Traffic Manager (LTM)](https://f5.com/products/big-ip/local-traffic-manager-ltm) module and [Application_Security_Module (ASM)](https://www.f5.com/pdf/products/big-ip-application-security-manager-overview.pdf) enabled to provide advanced traffic management functionality. This means you can also configure the BIG-IP VE to enable F5's L4/L7 security features, access control, and intelligent traffic management. The suggested SKU is F5-BIG-LTM-VE-1G-V16 base SKU, so we can also enable WAF and Telemetry Streaming for future developments
+This is the standard secure cloud architecture design where the front-end BIG-IP VE instances are running with 5 interfaces: 
+ - Management 
+ - External
+ - Internal
+ - To-ServiceChain
+ - Fr-ServiceChain
+
+The BIG-IP VEs have the [Local Traffic Manager (LTM)](https://f5.com/products/big-ip/local-traffic-manager-ltm) module and [SSL Orchestrator (SSLO)](https://www.f5.com/pdf/products/big-ip-application-security-manager-overview.pdf) enabled to provide advanced traffic management functionality. This means you can also configure the BIG-IP VE to enable F5's L4/L7 security features, access control, and intelligent traffic management. The suggested SKU is F5-BIG-LTM-VE-1G-V18 base SKU, with the ADD-SSLO option SKU so we can also enable SSL inspection and Telemetry Streaming for future developments
 
 The one big thing in this Terraform accounted for is composing resources a bit differently to account for dependencies into Immutable/Mutable elements. i.e. stuff you would typically frequently change/mutate, such as traditional config on the BIG-IP. Once the template is deployed, there are certain resources (like the network infrastructure) that are fixed while others (like BIG-IP VMs and configurations) can be changed   
 Ex.
@@ -88,6 +95,7 @@ Ex.
 | DO_onboard_URL | Yes | This is the raw github URL for downloading the Declarative Onboarding RPM |
 | AS3_URL | Yes | This is the raw github URL for downloading the AS3 RPM. |
 | TS_URL | Yes | This is the raw github URL for downloading the Telemetry Streaming RPM. |
+| CF_URL | Yes | This is the raw github URL for downloading the Cloud Failover RPM. |
 | libs_dir | Yes | This is where all the temporary libs and RPM will be store in BIG-IP. |
 | onboard_log | Yes | This is where the onboarding script logs all the events. |
 
