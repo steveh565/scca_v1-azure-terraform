@@ -1,0 +1,310 @@
+{
+    "class": "AS3",
+    "action": "deploy",
+    "persist": true,
+    "declaration": {
+        "class": "ADC",
+        "schemaVersion": "3.0.0",
+        "id": "firewall",
+        "label": "Firewall",
+        "remark": "Firewall policy, rule, and logging example",
+        "controls": {
+        "trace": true
+        },
+        "Sample_18": {
+            "class": "Tenant",
+            "fwFastL4": {
+                "fwAllowedAddressList": {
+                    "class": "Firewall_Address_List",
+                    "addresses": [
+                        "10.0.0.0/8",
+                        "172.20.0.0/16",
+                        "192.168.0.0/16"
+                    ]
+                },
+                "fwLogDestinationSyslog": {
+                    "class": "Log_Destination",
+                    "type": "remote-syslog",
+                    "remoteHighSpeedLog": {
+                        "use": "fwLogDestinationHsl"
+                    },
+                    "format": "rfc5424"
+                },
+                "fwLogDestinationHsl": {
+                    "class": "Log_Destination",
+                    "type": "remote-high-speed-log",
+                    "protocol": "tcp",
+                    "pool": {
+                        "use": "hsl_pool"
+                    }
+                },
+                "fwRuleList": {
+                "class": "Firewall_Rule_List",
+                "rules": [
+                        {
+                            "protocol": "tcp",
+                            "name": "tcpAllow",
+                            "loggingEnabled": true,
+                            "destination": {
+                                "portLists": [
+                                    {
+                                        "use": "fwAllowedPortList"
+                                    }
+                                ]
+                            },
+                            "source": {
+                                "addressLists": [
+                                    {
+                                        "use": "fwAllowedAddressList"
+                                    }
+                                ]
+                            },
+                            "action": "accept"
+                        },
+                        {
+                            "action": "accept",
+                            "loggingEnabled": true,
+                            "protocol": "udp",
+                            "name": "udpAllow",
+                            "source": {
+                                "addressLists": [
+                                    {
+                                        "use": "fwAllowedAddressList"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "action": "drop",
+                            "loggingEnabled": true,
+                            "protocol": "any",
+                            "name": "defaultDeny",
+                            "source": {
+                                "addressLists": [
+                                    {
+                                        "use": "fwDefaultDenyAddressList"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "hsl_pool": {
+                    "class": "Pool",
+                    "members": [
+                        {
+                            "serverAddresses": [
+                                "192.168.120.6"
+                            ],
+                            "enable": true,
+                            "servicePort": 514
+                        }
+                    ],
+                    "monitors": [
+                        {
+                            "bigip": "/Common/tcp"
+                        }
+                    ]
+                },
+                "fwAllowedPortList": {
+                    "class": "Firewall_Port_List",
+                    "ports": [
+                        22,
+                        53,
+                        80,
+                        443,
+                        "8080-8081"
+                    ]
+                },
+                "fwSecurityLogProfile": {
+                    "class": "Security_Log_Profile",
+                    "network": {
+                        "publisher": {
+                            "use": "fwLogPublisher"
+                        },
+                        "storageFormat": {
+                            "fields": [
+                                "action",
+                                "dest-ip",
+                                "dest-port",
+                                "src-ip",
+                                "src-port"
+                            ]
+                        },
+                        "logTranslationFields": true,
+                        "logTcpEvents": true,
+                        "logRuleMatchRejects": true,
+                        "logTcpErrors": true,
+                        "logIpErrors": true,
+                        "logRuleMatchDrops": true,
+                        "logRuleMatchAccepts": true
+                    }
+                },
+                "class": "Application",
+                "fwDefaultDenyAddressList": {
+                    "class": "Firewall_Address_List",
+                    "addresses": [
+                        "0.0.0.0/0"
+                    ]
+                },
+                "fwPolicy": {
+                    "rules": [
+                        {
+                            "use": "fwRuleList"
+                        }
+                    ],
+                    "class": "Firewall_Policy"
+                },
+                "ex_L4_Profile": {
+                    "class": "L4_Profile"
+                },
+                "template": "l4",
+                "ex_pool": {
+                    "class": "Pool",
+                    "members": [
+                        {
+                            "serverAddresses": [
+                                "192.168.31.3"
+                            ],
+                            "enable": true,
+                            "servicePort": 0
+                        }
+                    ],
+                    "monitors": [
+                        {
+                            "bigip": "/Common/gateway_icmp"
+                        }
+                    ]
+                },
+                "telemetry": {
+                    "class": "Pool",
+                    "members": [
+                      {
+                        "enable": true,
+                        "serverAddresses": [
+                          "255.255.255.254"
+                        ],
+                        "servicePort": 6514
+                      }
+                    ],
+                    "monitors": [
+                      {
+                        "bigip": "/Common/tcp"
+                      }
+                    ]
+                  },
+                  "telemetry_local_pool": {
+                    "class": "Pool",
+                    "monitors": [{
+                      "bigip": "/Common/tcp"
+                    }],
+                    "members": [
+                      {
+                        "servicePort": 6514,
+                        "serverAddresses": [
+                          "255.255.255.254"
+                        ]
+                      }
+                    ]
+                  },
+                  "telemetry_local_rule": {
+                      "remark": "Only required when TS is a local listener",
+                      "class": "iRule",
+                      "iRule": "when CLIENT_ACCEPTED {\n  node 127.0.0.1 6514\n}"
+                  },
+                  "telemetry_local": {
+                      "remark": "Only required when TS is a local listener",
+                    "class": "Service_TCP",
+                    "virtualAddresses": [
+                      "255.255.255.254"
+                    ],
+                    "virtualPort": 6514,
+                    "iRules": [
+                    "telemetry_local_rule"
+                    ]
+                  },
+                  "telemetry_hsl": {
+                    "class": "Log_Destination",
+                    "type": "remote-high-speed-log",
+                    "protocol": "tcp",
+                    "pool": {
+                      "use": "telemetry"
+                    }
+                  },
+                  "telemetry_formatted": {
+                    "class": "Log_Destination",
+                    "type": "splunk",
+                    "forwardTo": {
+                      "use": "telemetry_hsl"
+                    }
+                  },
+                  "telemetry_publisher": {
+                    "class": "Log_Publisher",
+                    "destinations": [
+                      {
+                        "use": "telemetry_formatted"
+                      }
+                    ]
+                  },
+                  "telemetry_traffic_log_profile": {
+                    "class": "Traffic_Log_Profile",
+                    "requestSettings": {
+                      "requestEnabled": true,
+                      "requestProtocol": "mds-tcp",   
+                      "requestPool": {
+                          "use": "telemetry_local_pool"
+                      },
+                      "requestTemplate": "event_source=\"request_logging\",hostname=\"$BIGIP_HOSTNAME\",client_ip=\"$CLIENT_IP\",server_ip=\"$SERVER_IP\",http_method=\"$HTTP_METHOD\",http_uri=\"$HTTP_URI\",virtual_name=\"$VIRTUAL_NAME\",event_timestamp=\"$DATE_HTTP\""
+                    }
+                  },
+                  "telemetry_security_log_profile": {
+                    "class": "Security_Log_Profile",
+                    "application": {
+                      "localStorage": false,
+                      "remoteStorage": "splunk",
+                      "protocol": "tcp",
+                      "servers": [
+                        {
+                          "address": "255.255.255.254",
+                          "port": "6514"
+                        }
+                      ],
+                      "storageFilter": {
+                      "requestType": "all"
+                      }
+                    }
+                },          
+                "serviceMain": {
+                    "translateServerAddress": false,
+                    "securityLogProfiles": [
+                        {
+                            "use": "fwSecurityLogProfile"
+                        }
+                    ],
+                    "virtualAddresses": [
+                        "0.0.0.0"
+                    ],
+                    "policyFirewallEnforced": {
+                        "use": "fwPolicy"
+                    },
+                    "translateServerPort": false,
+                    "profileL4": {
+                        "use": "ex_L4_Profile"
+                    },
+                    "virtualPort": 0,
+                    "snat": "none",
+                    "class": "Service_L4",
+                    "pool": "ex_pool"
+                },
+                "fwLogPublisher": {
+                    "class": "Log_Publisher",
+                    "destinations": [
+                        {
+                            "use": "fwLogDestinationSyslog"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}

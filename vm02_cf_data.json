@@ -1,0 +1,22 @@
+{
+    "class": "Cloud_Failover",
+    "environment": "azure",
+    "externalStorage": {
+        "scopingTags": {
+            "f5_cloud_failover_label": "app1"
+        }
+    },
+    "failoverAddresses": {
+        "scopingTags": {
+            "f5_cloud_failover_label": "app1"
+        }
+    },
+    "failoverRoutes": {
+        "scopingTags": {
+            "f5_cloud_failover_label": "app1"
+        },
+        "scopingAddressRanges": [
+            "10.90.2.0/24"
+        ]
+    }
+}

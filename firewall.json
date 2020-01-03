@@ -1,0 +1,89 @@
+{
+    "schemaVersion": "1.0.0",
+    "class": "Device",
+    "async": true,
+    "label": "Basic onboarding",
+    "Common": {
+        "class": "Tenant",
+        "hostname": "${local_host}.example.com",
+	"myLicense": {
+            "class": "License",
+            "licenseType": "regKey",
+            "regKey": "${regkey}"
+        },
+        "dbvars": {
+            "class": "DbVariables",
+            "ui.advisory.enabled": true,
+            "ui.advisory.color": "red",
+            "ui.advisory.text": "/Common/hostname"
+        },
+        "myDns": {
+            "class": "DNS",
+            "nameServers": [
+                "${dns_server}",
+                "2001:4860:4860::8844"
+            ],
+            "search": [
+                "f5.com"
+            ]
+        },
+        "myNtp": {
+            "class": "NTP",
+            "servers": [
+                "${ntp_server}",
+                "0.pool.ntp.org",
+                "1.pool.ntp.org"
+            ],
+            "timezone": "${timezone}"
+        },
+        "myProvisioning": {
+            "class": "Provision",
+            "ltm": "nominal",
+            "afm": "nominal",
+            "avr": "nominal",
+            "ilx": "nominal"
+        },
+        "ToSC": {
+            "class": "VLAN",
+            "tag": 1001,
+            "mtu": 1500,
+            "interfaces": [
+                {
+                    "name": "1.1",
+                    "tagged": false
+                }
+            ]
+        },
+        "ToSC-self": {
+            "class": "SelfIp",
+            "address": "${local_selfip1}/24",
+            "vlan": "ToSC",
+            "allowService": "default",
+            "trafficGroup": "traffic-group-local-only"
+        },
+        "FrSC": {
+            "class": "VLAN",
+            "tag": 1002,
+            "mtu": 1500,
+            "interfaces": [
+                {
+                    "name": "1.2",
+                    "tagged": false
+                }
+            ]
+        },
+        "FrSC-self": {
+            "class": "SelfIp",
+            "address": "${local_selfip2}/24",
+            "vlan": "FrSC",
+            "allowService": "default",
+            "trafficGroup": "traffic-group-local-only"
+        },
+        "default": {
+            "class": "Route",
+            "gw": "${gateway}",
+            "network": "default",
+            "mtu": 1500
+        }
+    }
+}
