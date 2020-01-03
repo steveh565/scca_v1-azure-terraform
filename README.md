@@ -104,7 +104,7 @@ Ex.
 
 The following is an example configuration diagram for this solution deployment. In this scenario, all access to the BIG-IP VE cluster (Active/Standby) is through an ALB. The IP addresses in this example may be different in your implementation.
 
-![Configuration Example](./Secure_Enclave_public_dmz.png)
+![Configuration Example](./security_vnet_sslo.png)
 
 
 ## Azure Sentinel integration
