@@ -81,8 +81,14 @@
         },
         "default": {
             "class": "Route",
-            "gw": "10.90.4.1",
+            "gw": "10.90.3.1",
             "network": "default",
+            "mtu": 1500
+        },
+        "sslo-traffic-route": {
+            "class": "Route",
+            "gw": "10.90.4.1",
+            "network": "10.90.2.0/24",
             "mtu": 1500
         }
     }

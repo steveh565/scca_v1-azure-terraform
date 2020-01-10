@@ -84,6 +84,12 @@
             "gw": "${gateway}",
             "network": "default",
             "mtu": 1500
+        },
+        "sslo-traffic-route": {
+            "class": "Route",
+            "gw": "${sslo_route}",
+            "network": "${ext_net}",
+            "mtu": 1500
         }
     }
 }

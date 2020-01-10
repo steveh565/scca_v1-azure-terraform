@@ -1,4 +1,3 @@
-variables.tf
 terraform.tfstate.backup
 terraform.tfstate
 crash.log
@@ -8,3 +7,4 @@ in2out_PAZ.newtf
 .terraform/plugins/linux_amd64/terraform-provider-null_v2.1.2_x4
 .terraform/plugins/linux_amd64/terraform-provider-template_v2.1.2_x4
 .terraform/plugins/linux_amd64/lock.json
+myVariables.tf

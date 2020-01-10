@@ -1,4 +1,5 @@
 {
+    "$schema": "https://raw.githubusercontent.com/F5Networks/f5-appsvcs-extension/master/schema/latest/as3-schema.json",
     "class": "AS3",
     "action": "deploy",
     "persist": true,
@@ -11,7 +12,7 @@
         "controls": {
         "trace": true
         },
-        "Sample_18": {
+        "IPS_Service": {
             "class": "Tenant",
             "fwFastL4": {
                 "fwAllowedAddressList": {
@@ -35,7 +36,7 @@
                     "type": "remote-high-speed-log",
                     "protocol": "tcp",
                     "pool": {
-                        "use": "hsl_pool"
+                        "use": "telemetry_hsl"
                     }
                 },
                 "fwRuleList": {
@@ -89,23 +90,6 @@
                         }
                     ]
                 },
-                "hsl_pool": {
-                    "class": "Pool",
-                    "members": [
-                        {
-                            "serverAddresses": [
-                                "192.168.120.6"
-                            ],
-                            "enable": true,
-                            "servicePort": 514
-                        }
-                    ],
-                    "monitors": [
-                        {
-                            "bigip": "/Common/tcp"
-                        }
-                    ]
-                },
                 "fwAllowedPortList": {
                     "class": "Firewall_Port_List",
                     "ports": [
@@ -113,6 +97,7 @@
                         53,
                         80,
                         443,
+                        8443,
                         "8080-8081"
                     ]
                 },
@@ -164,7 +149,7 @@
                     "members": [
                         {
                             "serverAddresses": [
-                                "192.168.31.3"
+                                "${f5vm02FrSC_sec}"
                             ],
                             "enable": true,
                             "servicePort": 0

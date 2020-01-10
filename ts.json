@@ -1,5 +1,21 @@
 {
     "class": "Telemetry",
+    "My_System": {
+        "class": "Telemetry_System",
+        "systemPoller": {
+          "interval": 60,
+          "actions": [
+            {
+              "setTag": {
+                "facility": "${location}"
+              },
+              "locations": {
+                "system": true
+              }
+            }
+          ]
+        }
+    },
     "controls": {
         "class": "Controls",
         "logLevel": "info"

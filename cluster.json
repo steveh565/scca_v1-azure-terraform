@@ -74,7 +74,7 @@
         "ToSC-self": {
             "class": "SelfIp",
             "address": "${local_selfip2}/24",
-            "vlan": "external",
+            "vlan": "ToSC",
             "allowService": "default",
             "trafficGroup": "traffic-group-local-only"
         },
@@ -92,7 +92,7 @@
         "FrSC-self": {
             "class": "SelfIp",
             "address": "${local_selfip3}/24",
-            "vlan": "external",
+            "vlan": "FrSC",
             "allowService": "default",
             "trafficGroup": "traffic-group-local-only"
         },
@@ -110,7 +110,7 @@
         "internal-self": {
             "class": "SelfIp",
             "address": "${local_selfip4}/24",
-            "vlan": "external",
+            "vlan": "internal",
             "allowService": "default",
             "trafficGroup": "traffic-group-local-only"
         },        
@@ -118,6 +118,12 @@
             "class": "Route",
             "gw": "${gateway}",
             "network": "default",
+            "mtu": 1500
+        },
+        "app1Route": {
+            "class": "Route",
+            "gw": "${app1_net_gw}",
+            "network": "${app1_net}",
             "mtu": 1500
         },
         "configsync": {

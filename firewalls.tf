@@ -46,7 +46,7 @@ resource "azurerm_lb" "fwlb" {
   name                  = "${var.prefix}fwlb"
   location              = "${azurerm_resource_group.main.location}"
   resource_group_name	= "${azurerm_resource_group.main.name}"
-
+  
   frontend_ip_configuration {
     name                          = "FW_LoadBalancerFrontEnd"
     subnet_id                     = "${azurerm_subnet.Ext2Sc.id}"
@@ -71,8 +71,8 @@ resource "azurerm_lb_probe" "fwlb_probe" {
   number_of_probes      = 2
 }
 
-resource "azurerm_lb_rule" "fwlb_rule1" {
-  name                  = "fwLBRule1"
+resource "azurerm_lb_rule" "fwlb_health" {
+  name                  = "fwLBRule_health"
   resource_group_name   = "${azurerm_resource_group.main.name}"
   loadbalancer_id       = "${azurerm_lb.fwlb.id}"
   protocol              = "tcp"
@@ -86,15 +86,15 @@ resource "azurerm_lb_rule" "fwlb_rule1" {
   depends_on                    = ["azurerm_lb_probe.fwlb_probe"]
 }
 
-resource "azurerm_lb_rule" "fwlb_rule2" {
-  name                  = "fwLBRule2"
+resource "azurerm_lb_rule" "fwlb_sslo" {
+  name                  = "fwLBRule_sslo"
   resource_group_name   = "${azurerm_resource_group.main.name}"
   loadbalancer_id       = "${azurerm_lb.fwlb.id}"
   protocol              = "tcp"
   frontend_port         = 80
   backend_port          = 80
   frontend_ip_configuration_name        = "FW_LoadBalancerFrontEnd"
-  enable_floating_ip            = false
+  enable_floating_ip            = true
   backend_address_pool_id       = "${azurerm_lb_backend_address_pool.fw_backend_pool.id}"
   idle_timeout_in_minutes       = 5
   probe_id                      = "${azurerm_lb_probe.fwlb_probe.id}"
@@ -286,14 +286,14 @@ resource "azurerm_network_interface" "fwvm02-FrSC-nic" {
 resource "azurerm_network_interface_backend_address_pool_association" "bpool_assc_fwvm01" {
   depends_on          = ["azurerm_lb_backend_address_pool.fw_backend_pool", "azurerm_network_interface.fwvm01-ToSC-nic"]
   network_interface_id    = "${azurerm_network_interface.fwvm01-ToSC-nic.id}"
-  ip_configuration_name   = "secondary"
+  ip_configuration_name   = "primary"
   backend_address_pool_id = "${azurerm_lb_backend_address_pool.fw_backend_pool.id}"
 }
 
 resource "azurerm_network_interface_backend_address_pool_association" "bpool_assc_fwvm02" {
   depends_on          = ["azurerm_lb_backend_address_pool.fw_backend_pool", "azurerm_network_interface.fwvm02-ToSC-nic"]
   network_interface_id    = "${azurerm_network_interface.fwvm02-ToSC-nic.id}"
-  ip_configuration_name   = "secondary"
+  ip_configuration_name   = "primary"
   backend_address_pool_id = "${azurerm_lb_backend_address_pool.fw_backend_pool.id}"
 }
 
@@ -311,7 +311,9 @@ data "template_file" "fwvm01_do_json" {
     local_selfip1   = "${var.fwvm01ToSC}"
     remote_selfip   = "${var.fwvm02ToSC}"
     local_selfip2   = "${var.fwvm01FrSC}"
-    gateway	        = "${local.Sc2Ext_gw}"
+    gateway	        = "${local.Ext2Sc_gw}"
+    sslo_route      = "${local.Sc2Ext_gw}"
+    ext_net         = "${local.ext_net}"
     dns_server	    = "${var.dns_server}"
     ntp_server	    = "${var.ntp_server}"
     timezone	      = "${var.timezone}"
@@ -333,7 +335,9 @@ data "template_file" "fwvm02_do_json" {
     local_selfip1   = "${var.fwvm02ToSC}"
     remote_selfip   = "${var.fwvm01ToSC}"
     local_selfip2   = "${var.fwvm02FrSC}"
-    gateway	        = "${local.Sc2Ext_gw}"
+    gateway	        = "${local.Ext2Sc_gw}"
+    sslo_route      = "${local.Sc2Ext_gw}"
+    ext_net         = "${local.ext_net}"
     dns_server	    = "${var.dns_server}"
     ntp_server	    = "${var.ntp_server}"
     timezone	      = "${var.timezone}"

@@ -26,123 +26,6 @@ resource "azurerm_log_analytics_workspace" "law" {
   location              = "${azurerm_resource_group.main.location}"
 }
 
-# Create a Virtual Network within the Resource Group
-resource "azurerm_virtual_network" "main" {
-  name			= "${var.prefix}-PAZ"
-  address_space		= ["${var.cidr}"]
-  resource_group_name	= "${azurerm_resource_group.main.name}"
-  location		= "${azurerm_resource_group.main.location}"
-}
-
-# Create a Virtual Network within the Resource Group
-resource "azurerm_virtual_network" "spoke" {
-  name                  = "${var.prefix}-spoke"
-  address_space         = ["${var.app-cidr}"]
-  resource_group_name   = "${azurerm_resource_group.main.name}"
-  location              = "${azurerm_resource_group.main.location}"
-}
-
-# Create the Mgmt Subnet within the Paz Virtual Network
-resource "azurerm_subnet" "Mgmt" {
-  name			= "Mgmt"
-  virtual_network_name	= "${azurerm_virtual_network.main.name}"
-  resource_group_name	= "${azurerm_resource_group.main.name}"
-  address_prefix	= "${var.subnets["subnet1"]}"
-}
-
-# Create the External Subnet within the Paz Virtual Network
-resource "azurerm_subnet" "External" {
-  name			= "External"
-  virtual_network_name	= "${azurerm_virtual_network.main.name}"
-  resource_group_name	= "${azurerm_resource_group.main.name}"
-  address_prefix	= "${var.subnets["subnet2"]}"
-}
-
-# Create the External-To-ServiceChain Subnet within the Paz Virtual Network
-resource "azurerm_subnet" "Ext2Sc" {
-  name			= "Ext2Sc"
-  virtual_network_name	= "${azurerm_virtual_network.main.name}"
-  resource_group_name	= "${azurerm_resource_group.main.name}"
-  address_prefix	= "${var.subnets["subnet3"]}"
-}
-
-# Create the External-From-ServiceChain Subnet within the Paz Virtual Network
-resource "azurerm_subnet" "Sc2Ext" {
-  name			= "Sc2Ext"
-  virtual_network_name	= "${azurerm_virtual_network.main.name}"
-  resource_group_name	= "${azurerm_resource_group.main.name}"
-  address_prefix	= "${var.subnets["subnet4"]}"
-}
-
-# Create the Internal Subnet within the Paz Virtual Network
-resource "azurerm_subnet" "Internal" {
-  name			= "Internal"
-  virtual_network_name	= "${azurerm_virtual_network.main.name}"
-  resource_group_name	= "${azurerm_resource_group.main.name}"
-  address_prefix	= "${var.subnets["subnet5"]}"
-}
-
-# Create the Internal-To-ServiceChain Subnet within the Paz Virtual Network
-resource "azurerm_subnet" "Int2Sc" {
-  name			= "Int2Sc"
-  virtual_network_name	= "${azurerm_virtual_network.main.name}"
-  resource_group_name	= "${azurerm_resource_group.main.name}"
-  address_prefix	= "${var.subnets["subnet6"]}"
-}
-
-# Create the Inernal-From-ServiceChain Subnet within the Paz Virtual Network
-resource "azurerm_subnet" "Sc2Int" {
-  name			= "Sc2Int"
-  virtual_network_name	= "${azurerm_virtual_network.main.name}"
-  resource_group_name	= "${azurerm_resource_group.main.name}"
-  address_prefix	= "${var.subnets["subnet7"]}"
-}
-
-# Create the Inernal-ALB frontend Subnet within the Paz Virtual Network
-resource "azurerm_subnet" "ALB2Internal" {
-  name			= "ALB2Internal"
-  virtual_network_name	= "${azurerm_virtual_network.main.name}"
-  resource_group_name	= "${azurerm_resource_group.main.name}"
-  address_prefix	= "${var.subnets["subnet8"]}"
-}
-
-# Create the App1 Subnet within the Spoke Virtual Network
-resource "azurerm_subnet" "App1" {
-  name                  = "App1"
-  virtual_network_name  = "${azurerm_virtual_network.spoke.name}"
-  resource_group_name   = "${azurerm_resource_group.main.name}"
-  address_prefix        = "${var.app-subnets["subnet1"]}"
-}
-
-# Obtain Gateway IP for each Subnet
-locals {
-  depends_on		= ["azurerm_subnet.Mgmt", "azurerm_subnet.External"]
-  mgmt_gw		= "${cidrhost(azurerm_subnet.Mgmt.address_prefix, 1)}"
-  ext_gw		= "${cidrhost(azurerm_subnet.External.address_prefix, 1)}"
-  Sc2Ext_gw   = "${cidrhost(azurerm_subnet.Sc2Ext.address_prefix, 1)}"
-  app1_gw   = "${cidrhost(azurerm_subnet.App1.address_prefix, 1)}"
-}
-
-# Create Network Peerings
-resource "azurerm_virtual_network_peering" "PazToSpoke" {
-  name                      = "PazToSpoke"
-  depends_on                = ["azurerm_virtual_machine.backendvm"]
-  resource_group_name       = "${azurerm_resource_group.main.name}"
-  virtual_network_name      = "${azurerm_virtual_network.main.name}"
-  remote_virtual_network_id = "${azurerm_virtual_network.spoke.id}"
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-}
-
-resource "azurerm_virtual_network_peering" "SpokeToPAZ" {
-  name                      = "PazToSpoke"
-  depends_on                = ["azurerm_virtual_machine.backendvm"]
-  resource_group_name       = "${azurerm_resource_group.main.name}"
-  virtual_network_name      = "${azurerm_virtual_network.spoke.name}"
-  remote_virtual_network_id = "${azurerm_virtual_network.main.id}"
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-}
 
 # Create a Public IP for the Virtual Machines
 resource "azurerm_public_ip" "f5vm01mgmtpip" {
@@ -217,7 +100,7 @@ resource "azurerm_lb_backend_address_pool" "f5_backend_pool" {
 resource "azurerm_lb_probe" "extlb_probe" {
   resource_group_name	= "${azurerm_resource_group.main.name}"
   loadbalancer_id       = "${azurerm_lb.extlb.id}"
-  name                  = "tcpProbe"
+  name                  = "${var.prefix}-extlb-tcpProbe"
   protocol              = "tcp"
   port                  = 8443
   interval_in_seconds   = 5
@@ -225,7 +108,7 @@ resource "azurerm_lb_probe" "extlb_probe" {
 }
 
 resource "azurerm_lb_rule" "extlb_rule1" {
-  name                  = "extLBRule1"
+  name                  = "${var.prefix}-extLBRule1"
   resource_group_name   = "${azurerm_resource_group.main.name}"
   loadbalancer_id       = "${azurerm_lb.extlb.id}"
   protocol              = "tcp"
@@ -240,7 +123,7 @@ resource "azurerm_lb_rule" "extlb_rule1" {
 }
 
 resource "azurerm_lb_rule" "extlb_rule2" {
-  name                  = "extLBRule2"
+  name                  = "${var.prefix}-extLBRule2"
   resource_group_name   = "${azurerm_resource_group.main.name}"
   loadbalancer_id       = "${azurerm_lb.extlb.id}"
   protocol              = "tcp"
@@ -252,87 +135,6 @@ resource "azurerm_lb_rule" "extlb_rule2" {
   idle_timeout_in_minutes       = 5
   probe_id                      = "${azurerm_lb_probe.extlb_probe.id}"
   depends_on                    = ["azurerm_lb_probe.extlb_probe"]
-}
-
-# Create a Network Security Group with some rules
-resource "azurerm_network_security_group" "main" {
-  name                = "${var.prefix}-nsg"
-  location            = "${azurerm_resource_group.main.location}"
-  resource_group_name = "${azurerm_resource_group.main.name}"
-
-  security_rule {
-    name                       = "allow_SSH"
-    description                = "Allow SSH access"
-    priority                   = 100
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "22"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-
-  security_rule {
-    name                       = "allow_HTTP"
-    description                = "Allow HTTP access"
-    priority                   = 110
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "80"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-
-  security_rule {
-    name                       = "allow_HTTPS"
-    description                = "Allow HTTPS access"
-    priority                   = 120
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "443"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-
-  security_rule {
-    name                       = "allow_RDP"
-    description                = "Allow RDP access"
-    priority                   = 130
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "3389"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-
-  security_rule {
-    name                       = "allow_APP_HTTPS"
-    description                = "Allow HTTPS access"
-    priority                   = 140
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "8443"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-
-  tags = {
-    Name           = "${var.environment}-bigip-sg"
-    environment    = "${var.environment}"
-    owner          = "${var.owner}"
-    group          = "${var.group}"
-    costcenter     = "${var.costcenter}"
-    application    = "${var.application}"
-  }
 }
 
 # Create interfaces for the BIGIPs 
@@ -664,28 +466,6 @@ resource "azurerm_network_interface" "f5vm02-internal-nic" {
   }
 }
 
-# Create the Interface for the App server
-resource "azurerm_network_interface" "backend01-ext-nic" {
-  name                = "${var.prefix}-backend01-ext-nic"
-  location            = "${azurerm_resource_group.main.location}"
-  resource_group_name = "${azurerm_resource_group.main.name}"
-  network_security_group_id = "${azurerm_network_security_group.main.id}"
-
-  ip_configuration {
-    name                          = "primary"
-    subnet_id                     = "${azurerm_subnet.App1.id}"
-    private_ip_address_allocation = "Static"
-    private_ip_address            = "${var.backend01ext}"
-    primary			  = true
-  }
-
-  tags = {
-    foo            = "bar"
-    f5_cloud_failover_label = "${var.prefix}-${var.application}"
-    f5_cloud_failover_nic_map = "internal"
-  }
-}
-
 # Associate the Network Interface to the F5 BackendPool
 resource "azurerm_network_interface_backend_address_pool_association" "bpool_assc_f5vm01" {
   depends_on          = ["azurerm_lb_backend_address_pool.f5_backend_pool", "azurerm_network_interface.f5vm01-ext-nic"]
@@ -740,6 +520,9 @@ data "template_file" "f5vm01_do_json" {
     timezone	      = "${var.timezone}"
     admin_user      = "${var.uname}"
     admin_password  = "${var.upassword}"
+
+    app1_net        = "${local.app1_net}"
+    app1_net_gw     = "${local.app1_net_gw}"
   }
 }
 
@@ -766,10 +549,13 @@ data "template_file" "f5vm02_do_json" {
     timezone        = "${var.timezone}"
     admin_user      = "${var.uname}"
     admin_password  = "${var.upassword}"
+
+    app1_net        = "${local.app1_net}"
+    app1_net_gw     = "${local.app1_net_gw}"
   }
 }
 
-data "template_file" "as3_json" {
+data "template_file" "sslo_as3_json" {
   template = "${file("${path.module}/as3.json")}"
 
   vars = {
@@ -779,6 +565,22 @@ data "template_file" "as3_json" {
     tenant_id	    = "${var.SP["tenant_id"]}"
     client_id	    = "${var.SP["client_id"]}"
     client_secret   = "${var.SP["client_secret"]}"
+    f5vm02FrSC_sec  = "${var.f5vm02FrSC_sec}"
+  }
+}
+
+
+data "template_file" "fw_as3_json" {
+  template = "${file("${path.module}/fw_as3.json")}"
+
+  vars = {
+    backendvm_ip    = "${var.backend01ext}"
+    rg_name	    = "${azurerm_resource_group.main.name}"
+    subscription_id = "${var.SP["subscription_id"]}"
+    tenant_id	    = "${var.SP["tenant_id"]}"
+    client_id	    = "${var.SP["client_id"]}"
+    client_secret   = "${var.SP["client_secret"]}"
+    f5vm02FrSC_sec  = "${var.f5vm02FrSC_sec}"
   }
 }
 
@@ -786,6 +588,7 @@ data "template_file" "ts_json" {
   template = "${file("${path.module}/ts.json")}"
   depends_on           = ["azurerm_log_analytics_workspace.law"]
   vars = {
+    location        = "${var.location}"
     law_id          = "${azurerm_log_analytics_workspace.law.workspace_id}"
     law_primkey     = "${azurerm_log_analytics_workspace.law.primary_shared_key}"
   }
@@ -795,7 +598,7 @@ data "template_file" "ts_json" {
 resource "azurerm_virtual_machine" "f5vm01" {
   name                         = "${var.prefix}-f5vm01"
   location                     = "${azurerm_resource_group.main.location}"
-  depends_on                   = ["azurerm_virtual_machine.backendvm"]
+  depends_on                   = ["azurerm_virtual_machine.app1-backendvm"]
   resource_group_name          = "${azurerm_resource_group.main.name}"
   primary_network_interface_id = "${azurerm_network_interface.f5vm01-mgmt-nic.id}"
   network_interface_ids        = ["${azurerm_network_interface.f5vm01-mgmt-nic.id}", "${azurerm_network_interface.f5vm01-ext-nic.id}", "${azurerm_network_interface.f5vm01-ToSC-nic.id}", "${azurerm_network_interface.f5vm01-FrSC-nic.id}", "${azurerm_network_interface.f5vm01-internal-nic.id}"]
@@ -854,7 +657,7 @@ resource "azurerm_virtual_machine" "f5vm01" {
 resource "azurerm_virtual_machine" "f5vm02" {
   name                         = "${var.prefix}-f5vm02"
   location                     = "${azurerm_resource_group.main.location}"
-  depends_on                   = ["azurerm_virtual_machine.backendvm"]
+  depends_on                   = ["azurerm_virtual_machine.app1-backendvm"]
   resource_group_name          = "${azurerm_resource_group.main.name}"
   primary_network_interface_id = "${azurerm_network_interface.f5vm02-mgmt-nic.id}"
   network_interface_ids        = ["${azurerm_network_interface.f5vm02-mgmt-nic.id}", "${azurerm_network_interface.f5vm02-ext-nic.id}", "${azurerm_network_interface.f5vm02-ToSC-nic.id}", "${azurerm_network_interface.f5vm02-FrSC-nic.id}", "${azurerm_network_interface.f5vm02-internal-nic.id}"]
@@ -907,51 +710,6 @@ resource "azurerm_virtual_machine" "f5vm02" {
     group          = "${var.group}"
     costcenter     = "${var.costcenter}"
     application    = "${var.application}"
-  }
-}
-
-
-# backend VM
-resource "azurerm_virtual_machine" "backendvm" {
-    name                  = "backendvm"
-    location                     = "${azurerm_resource_group.main.location}"
-    resource_group_name          = "${azurerm_resource_group.main.name}"
-
-    network_interface_ids = ["${azurerm_network_interface.backend01-ext-nic.id}"]
-    vm_size               = "Standard_B1s"
-
-    storage_os_disk {
-        name              = "backendOsDisk"
-        caching           = "ReadWrite"
-        create_option     = "FromImage"
-        managed_disk_type = "Premium_LRS"
-    }
-
-    storage_image_reference {
-        publisher = "Canonical"
-        offer     = "UbuntuServer"
-        sku       = "18.04-LTS"
-        version   = "latest"
-    }
-
-    os_profile {
-        computer_name  = "backend01"
-        admin_username = "${var.uname}"
-        admin_password = "${var.upassword}"
-        custom_data = <<-EOF
-              #!/bin/bash
-              apt-get update -y
-              apt-get install -y docker.io
-              docker run -d -p 80:80 --net=host --restart unless-stopped vulnerables/web-dvwa
-              EOF
-    }
-
-    os_profile_linux_config {
-        disable_password_authentication = false
-    }
-
-  tags = {
-    application    = "app1"
   }
 }
 
